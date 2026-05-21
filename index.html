@@ -173,7 +173,7 @@ h1,h2,h3{font-family:'Raleway',sans-serif}
     <div>
       <div class="header-title"><span style="font-size:24px">📊</span><h1>Ops Dashboard</h1></div>
       <p>Central de gestão operacional</p>
-      <div class="sync-status" id="syncStatus"></div>
+      <div class="sync-status" id="syncStatus">☁️ Conectando ao Firebase...</div>
     </div>
     <div class="header-actions">
       <button class="header-btn" onclick="syncCalendar()">🔄 Sincronizar</button>
@@ -210,7 +210,29 @@ h1,h2,h3{font-family:'Raleway',sans-serif}
   </div>
 </div>
 
+<!-- Firebase SDK (compat mode — funciona com script tags, sem build tools) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <script>
+// ═══════════════════════════════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════════════════════════════
+var firebaseConfig = {
+  apiKey: "AIzaSyB7UsMYErF80aHdOSHPXjcVtaVyBuOHgkQ",
+  authDomain: "laria-a557f.firebaseapp.com",
+  databaseURL: "https://laria-a557f-default-rtdb.firebaseio.com",
+  projectId: "laria-a557f",
+  storageBucket: "laria-a557f.firebasestorage.app",
+  messagingSenderId: "133070951414",
+  appId: "1:133070951414:web:e637169759cbcfac876dd7"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+var dbRef = db.ref('ops_dashboard');
+var firebaseReady = false;
+var savePending = false;
+
 // ═══════════════════════════════════════════════════════════════
 // COLE SUA URL DO APPS SCRIPT AQUI (opcional — também pode configurar pelo ⚙️)
 // ═══════════════════════════════════════════════════════════════
@@ -224,8 +246,8 @@ function doLogout(){role=null;document.getElementById('loginScreen').style.displ
 
 // ═══ CALENDAR SYNC (JSONP) ═══
 var API_URL='';
-function loadApiUrl(){try{API_URL=localStorage.getItem('ops_api_url')||DEFAULT_API_URL;document.getElementById('apiUrlInput').value=API_URL}catch(e){API_URL=DEFAULT_API_URL}}
-function saveApiUrl(){API_URL=document.getElementById('apiUrlInput').value.trim();try{localStorage.setItem('ops_api_url',API_URL)}catch(e){}document.getElementById('configPanel').classList.remove('open');if(API_URL)syncCalendar()}
+function loadApiUrl(){API_URL=DEFAULT_API_URL;document.getElementById('apiUrlInput').value=API_URL}
+function saveApiUrl(){API_URL=document.getElementById('apiUrlInput').value.trim();document.getElementById('configPanel').classList.remove('open');if(API_URL)syncCalendar()}
 function toggleConfig(){document.getElementById('configPanel').classList.toggle('open')}
 function updateSync(msg){document.getElementById('syncStatus').textContent=msg}
 
@@ -252,12 +274,12 @@ function syncCalendar(){
   var old=document.getElementById('jsonpScript');if(old)old.remove();
   var s=document.createElement('script');s.id='jsonpScript';
   s.src=API_URL+'?callback=calendarCallback&daysBack=7&daysForward=60';
-  s.onerror=function(){updateSync('❌ Erro de conexão');try{var c=localStorage.getItem('ops_cal_cache');if(c){D.meetings=JSON.parse(c);updateSync('⚠️ Offline — cache');R()}}catch(ex){}};
+  s.onerror=function(){updateSync('❌ Erro de conexão')};
   document.head.appendChild(s);
 }
 
-// ═══ DATA ═══
-var D={
+// ═══ DATA (defaults — Firebase sobrescreve ao conectar) ═══
+var DEFAULT_DATA={
   meetings:[
     {id:1,title:'1:1 com Laís',date:'2026-05-26',time:'10:45',end:'11:30',type:'1:1',who:'',done:false,agenda:[{t:'Comunicar venda das férias',d:false},{t:'Solicitar agendamento de 15 dias em outubro',d:false}]},
     {id:2,title:'Weekly do time',date:'2026-05-26',time:'14:00',end:'14:45',type:'Recorrente',who:'',done:false,agenda:[]},
@@ -309,6 +331,9 @@ var D={
   ]
 };
 
+// D começa com defaults; Firebase sobrescreve quando conectar
+var D = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
 var TEAMS=[
   {id:'adocao',name:'Adoção',icon:'🚀'},
   {id:'farmer',name:'Farmer',icon:'🌱'},
@@ -322,9 +347,47 @@ var tab='dashboard',filter='todos',editSec=null,editItem=null;
 // Date range filter: 'hoje3' (default), 'hoje', 'semana', 'quinzena', 'mes', 'todos'
 var dateRange='hoje3';
 
-function save(){try{localStorage.setItem('ops_v6',JSON.stringify(D));localStorage.setItem('ops_cal_cache',JSON.stringify(D.meetings))}catch(e){}}
-function load(){try{var s=localStorage.getItem('ops_v6');if(s)D=JSON.parse(s)}catch(e){}}
-load();
+// ═══ FIREBASE SAVE / LOAD ═══
+function save(){
+  // Salva no Firebase (nuvem — todos veem)
+  dbRef.set(D).then(function(){
+    updateSaveStatus('☁️ Salvo');
+  }).catch(function(err){
+    console.error('Firebase save error:', err);
+    updateSaveStatus('⚠️ Erro ao salvar');
+  });
+}
+
+function updateSaveStatus(msg){
+  var el=document.getElementById('syncStatus');
+  if(el){
+    var cur=el.textContent;
+    // Não sobrescreve mensagem de sync do calendário se for recente
+    if(cur.indexOf('eventos')>-1) return;
+    el.textContent=msg;
+    setTimeout(function(){if(el.textContent===msg)el.textContent=''},3000);
+  }
+}
+
+// Listener em tempo real: qualquer mudança no Firebase atualiza o dashboard
+dbRef.on('value', function(snapshot){
+  var data = snapshot.val();
+  if(data){
+    // Garante que todos os arrays existam (Firebase remove arrays vazios)
+    D.meetings = data.meetings || [];
+    D.tasks = data.tasks || [];
+    D.alignments = data.alignments || [];
+    D.projects = data.projects || [];
+    D.crmCS = data.crmCS || [];
+    D.backlog = data.backlog || [];
+    firebaseReady = true;
+    if(role) R(); // Só re-renderiza se logado
+  } else {
+    // Primeiro acesso: popula o Firebase com dados default
+    firebaseReady = true;
+    dbRef.set(DEFAULT_DATA);
+  }
+});
 
 // ═══ HELPERS ═══
 var WD={0:'Dom',1:'Seg',2:'Ter',3:'Qua',4:'Qui',5:'Sex',6:'Sáb'};
@@ -686,7 +749,7 @@ function saveItem(){
 
 function delItem(sec,id){if(!confirm('Excluir?'))return;D[sec]=D[sec].filter(function(i){return i.id!==id});save();R()}
 
-R();
+// Não chama R() aqui — o listener do Firebase faz isso automaticamente quando conectar
 </script>
 </body>
 </html>
