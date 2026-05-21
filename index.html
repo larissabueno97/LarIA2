@@ -38,7 +38,7 @@ h1,h2,h3{font-family:'Raleway',sans-serif}
 
 .content{padding:20px 24px;max-width:1100px;margin:0 auto}
 
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
 .summary-card{background:var(--card);border-radius:var(--r);padding:18px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
 .summary-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;font-size:16px}
 .summary-value{font-size:26px;font-weight:700}
@@ -419,7 +419,6 @@ function rDash(){
     '<div class="summary-card"><div class="summary-icon" style="background:#F59E0B12">⚡</div><div class="summary-value">'+ut+'</div><div class="summary-label">Tarefas urgentes</div></div>'+
     '<div class="summary-card"><div class="summary-icon" style="background:#3B82F612">🤝</div><div class="summary-value">'+pa+'</div><div class="summary-label">Alinhamentos</div></div>'+
     '<div class="summary-card"><div class="summary-icon" style="background:#10B98112">🚀</div><div class="summary-value">'+ap+'</div><div class="summary-label">Projetos ativos</div></div>'+
-    '<div class="summary-card"><div class="summary-icon" style="background:#8B5CF612">📋</div><div class="summary-value">'+cf+'</div><div class="summary-label">Frentes CRM CS</div></div>'+
     '</div>';
 
   // Date filter
@@ -449,14 +448,16 @@ function rDash(){
     h+='</div>';
   }
 
-  // Demandas
-  h+='<div class="dash-card"><div class="dash-card-header"><h3>🔥 Demandas</h3><button class="dash-link" onclick="go(\'tasks\')">Ver todas →</button></div>';
-  var openTasks=D.tasks.filter(function(x){return!x.done});
-  if(openTasks.length===0)h+='<div style="padding:16px 0;text-align:center;color:var(--t3);font-size:12px">Tudo concluído!</div>';
-  else openTasks.forEach(function(x){
-    h+='<div class="list-item"><input type="checkbox" onchange="toggleTask('+x.id+')"><div class="item-content"><div class="item-title">'+E(x.title)+'</div><div class="item-sub">'+E(x.owner)+' · até '+fdf(x.deadline)+'</div></div><div class="item-badges">'+PB(x.priority)+'</div></div>';
-  });
-  h+='</div>';
+  // Demandas (admin — leader vê embaixo dos projects)
+  if(role==='admin'){
+    h+='<div class="dash-card"><div class="dash-card-header"><h3>🔥 Demandas</h3><button class="dash-link" onclick="go(\'tasks\')">Ver todas →</button></div>';
+    var openTasks=D.tasks.filter(function(x){return!x.done});
+    if(openTasks.length===0)h+='<div style="padding:16px 0;text-align:center;color:var(--t3);font-size:12px">Tudo concluído!</div>';
+    else openTasks.forEach(function(x){
+      h+='<div class="list-item"><input type="checkbox" onchange="toggleTask('+x.id+')"><div class="item-content"><div class="item-title">'+E(x.title)+'</div><div class="item-sub">'+E(x.owner)+' · até '+fdf(x.deadline)+'</div></div><div class="item-badges">'+PB(x.priority)+'</div></div>';
+    });
+    h+='</div>';
+  }
 
   // Alinhamentos (admin)
   if(role==='admin'){
@@ -469,19 +470,31 @@ function rDash(){
     h+='</div>';
   }
 
-  // Projects
-  h+='<div class="dash-card '+(role==='admin'?'':'full-width')+'"><div class="dash-card-header"><h3>🚀 Big Projects</h3><button class="dash-link" onclick="go(\'projects\')">Ver todos →</button></div>';
+  // Big Projects (full width, inclui CRM CS como transversal)
+  h+='<div class="dash-card full-width"><div class="dash-card-header"><h3>🚀 Big Projects</h3><button class="dash-link" onclick="go(\'projects\')">Ver todos →</button></div>';
   D.projects.forEach(function(p){
-    h+='<div style="padding:8px 0;border-bottom:1px solid #F9F7F4"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span class="item-title">'+E(p.name)+'</span><span style="font-size:11px;font-weight:700;color:var(--red)">'+p.progress+'%</span></div><div class="progress-track"><div class="progress-fill" style="width:'+p.progress+'%"></div></div></div>';
+    var team=TEAMS.find(function(t){return t.id===p.team});
+    h+='<div style="padding:8px 0;border-bottom:1px solid #F9F7F4"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="display:flex;align-items:center;gap:6px"><span class="item-title">'+E(p.name)+'</span>'+(team?B(team.name,'purple'):'')+'</div><span style="font-size:11px;font-weight:700;color:var(--red)">'+p.progress+'%</span></div><div class="progress-track"><div class="progress-fill" style="width:'+p.progress+'%"></div></div></div>';
   });
-  h+='</div>';
-
-  // CRM CS
-  h+='<div class="dash-card full-width"><div class="dash-card-header"><h3>🔗 CRM CS — Projeto Transversal</h3></div>';
+  // CRM CS dentro de Big Projects
+  h+='<div style="margin-top:12px;padding-top:10px;border-top:2px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px">🔗 PROJETO TRANSVERSAL — CRM CS</div>';
   D.crmCS.forEach(function(f){
     h+='<div class="list-item"><div class="item-content"><div class="item-title">'+E(f.title)+'</div><div class="item-sub">'+E(f.desc)+'</div></div><div class="item-badges">'+SB(f.status)+'</div></div>';
   });
   h+='</div></div>';
+
+  // Demandas (para visão liderança, fica embaixo full-width)
+  if(role==='leader'){
+    h+='<div class="dash-card full-width"><div class="dash-card-header"><h3>🔥 Demandas</h3><button class="dash-link" onclick="go(\'tasks\')">Ver todas →</button></div>';
+    var leaderTasks=D.tasks.filter(function(x){return!x.done});
+    if(leaderTasks.length===0)h+='<div style="padding:16px 0;text-align:center;color:var(--t3);font-size:12px">Tudo concluído!</div>';
+    else leaderTasks.forEach(function(x){
+      h+='<div class="list-item"><div class="item-content"><div class="item-title">'+E(x.title)+'</div><div class="item-sub">'+E(x.owner)+' · até '+fdf(x.deadline)+'</div></div><div class="item-badges">'+PB(x.priority)+'</div></div>';
+    });
+    h+='</div>';
+  }
+
+  h+='</div>';
   return h;
 }
 
@@ -588,15 +601,10 @@ function rTeams(){
 }
 
 function rProj(){
-  var h='<div class="transversal-banner"><h3>🔗 Projeto Transversal — CRM CS</h3><p>Iniciativa cross-funcional que impacta todos os times</p><div class="frentes-grid">';
-  D.crmCS.forEach(function(f){
-    h+='<div class="frente-card"><h4>'+E(f.title)+'</h4><p>'+E(f.desc)+'</p><div style="font-size:10px;opacity:.6;margin-top:6px">👤 '+E(f.owner)+' · '+SB(f.status)+'</div></div>';
-  });
-  h+='</div></div>';
-
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">Big Projects por Time</h3>'
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">🚀 Big Projects</h3>'
     +(role==='admin'?'<button class="add-btn" onclick="openAdd(\'projects\')">➕ Novo projeto</button>':'')+'</div>';
 
+  // Projetos por time
   D.projects.forEach(function(p){
     var team=TEAMS.find(function(t){return t.id===p.team});
     h+='<div class="project-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
@@ -609,6 +617,14 @@ function rProj(){
       +(p.pendencias?'<div style="margin-top:8px;padding:8px 12px;background:#FEF2F2;border-radius:8px;font-size:11px;color:#991B1B">⚠️ '+E(p.pendencias)+'</div>':'')
       +'</div>';
   });
+
+  // CRM CS dentro de Big Projects
+  h+='<div class="transversal-banner"><h3>🔗 Projeto Transversal — CRM CS</h3><p>Iniciativa cross-funcional que impacta todos os times</p><div class="frentes-grid">';
+  D.crmCS.forEach(function(f){
+    h+='<div class="frente-card"><h4>'+E(f.title)+'</h4><p>'+E(f.desc)+'</p><div style="font-size:10px;opacity:.6;margin-top:6px">👤 '+E(f.owner)+' · '+SB(f.status)+'</div></div>';
+  });
+  h+='</div></div>';
+
   return h;
 }
 
