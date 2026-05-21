@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ops Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Raleway:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--red:#EA1D2C;--red-dark:#C41420;--sand:#F5E9DA;--peach:#FFDEBB;--bg:#FAF8F5;--card:#FFF;--border:#F0EDE8;--t1:#1A1A1A;--t2:#6B7280;--t3:#9CA3AF;--green:#10B981;--yellow:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6;--orange:#F97316;--r:16px;--rs:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Montserrat',-apple-system,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
+h1,h2,h3{font-family:'Raleway',sans-serif}
+
+/* Login */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FAF8F5,#F5E9DA)}
+.login-box{background:#fff;border-radius:24px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.08);text-align:center}
+.login-logo{font-size:40px;margin-bottom:8px}
+.login-box h2{font-size:22px;font-weight:800;color:var(--red);margin-bottom:4px}
+.login-box p{font-size:13px;color:var(--t2);margin-bottom:24px}
+.login-input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid #E5E7EB;font-size:14px;font-family:inherit;outline:none;margin-bottom:12px;text-align:center}
+.login-input:focus{border-color:var(--red)}
+.login-btn{width:100%;padding:14px;border-radius:12px;border:none;background:var(--red);color:#fff;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* Header */
+.header{background:linear-gradient(135deg,var(--red),var(--red-dark));padding:24px 32px 18px;color:#fff}
+.header-top{display:flex;justify-content:space-between;align-items:center}
+.header-title{display:flex;align-items:center;gap:12px}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.header p{font-size:13px;opacity:.85;margin-top:2px}
+.header-actions{display:flex;gap:8px}
+.header-btn,.logout-btn{padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit}
+.logout-btn{border:none;background:rgba(255,255,255,.15)}
+.sync-status{font-size:10px;opacity:.7;margin-top:4px}
+
+/* Nav */
+.nav{display:flex;gap:4px;padding:12px 24px;background:#fff;border-bottom:1px solid var(--border);overflow-x:auto}
+.nav-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rs);border:none;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:var(--t2);font-family:inherit;white-space:nowrap;transition:all .2s}
+.nav-btn.active{background:var(--red);color:#fff}
+.nav-btn:hover:not(.active){background:#F3F4F6}
+
+.content{padding:20px 24px;max-width:1100px;margin:0 auto}
+
+/* Summary */
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.summary-card{background:var(--card);border-radius:var(--r);padding:18px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+.summary-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;font-size:16px}
+.summary-value{font-size:26px;font-weight:700}
+.summary-label{font-size:11px;color:var(--t2);font-weight:500;margin-top:2px}
+
+/* Dash */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dash-card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border)}
+.dash-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.dash-card-header h3{font-size:14px;font-weight:700}
+.dash-link{background:none;border:none;cursor:pointer;font-size:12px;color:var(--red);font-weight:600;font-family:inherit}
+.full-width{grid-column:1/-1}
+
+/* List items with check */
+.list-item{padding:10px 0;border-bottom:1px solid #F9F7F4;display:flex;align-items:center;gap:10px}
+.list-item:last-child{border-bottom:none}
+.list-item input[type=checkbox]{accent-color:var(--red);cursor:pointer;width:16px;height:16px;flex-shrink:0}
+.item-content{flex:1;min-width:0}
+.item-title{font-size:13px;font-weight:600}
+.item-title.done{text-decoration:line-through;color:var(--t3)}
+.item-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.item-badges{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.b-red{background:#EA1D2C18;color:var(--red)}.b-green{background:#10B98118;color:var(--green)}.b-yellow{background:#F59E0B18;color:var(--yellow)}.b-blue{background:#3B82F618;color:var(--blue)}.b-purple{background:#8B5CF618;color:var(--purple)}.b-gray{background:#9CA3AF18;color:var(--t3)}.b-orange{background:#F9731618;color:var(--orange)}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;background:#F3F4F6;color:var(--t2);transition:all .2s}
+.filter-btn.active{background:var(--red);color:#fff}
+.add-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rs);border:none;background:var(--red);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
+
+/* Entry cards */
+.entry-card{background:var(--card);border-radius:14px;padding:16px 20px;border:1px solid var(--border);margin-bottom:10px;transition:box-shadow .2s}
+.entry-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.entry-card.overdue{border-color:#FCA5A5}
+.entry-card.urgent{border-left:4px solid var(--red)}
+.entry-top{display:flex;justify-content:space-between;align-items:center}
+.entry-meta{font-size:12px;color:var(--t2);display:flex;gap:16px;margin-top:4px;flex-wrap:wrap}
+.entry-actions{display:flex;gap:4px}
+.icon-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;font-size:14px}
+.icon-btn:hover{background:#F3F4F6}
+
+/* Pautas */
+.agenda-section{margin-top:10px;padding:10px 14px;background:#FAFAF9;border-radius:10px;border:1px solid #F0EDE8}
+.agenda-title{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.agenda-item{display:flex;align-items:flex-start;gap:6px;padding:4px 0;font-size:12px}
+.agenda-item input[type=checkbox]{margin-top:2px;accent-color:var(--red);cursor:pointer}
+.agenda-text{flex:1}
+.agenda-text.done{text-decoration:line-through;color:var(--t3)}
+.add-agenda{display:flex;gap:6px;margin-top:6px}
+.add-agenda input{flex:1;padding:6px 10px;border-radius:8px;border:1px solid #E5E7EB;font-size:12px;font-family:inherit;outline:none}
+.add-agenda button{padding:6px 12px;border-radius:8px;border:none;background:var(--red);color:#fff;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit}
+
+/* Day separator */
+.day-sep{display:flex;align-items:center;gap:12px;margin:20px 0 12px;font-size:13px;font-weight:700}
+.day-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.day-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--sand);color:#92400E}
+.day-today{background:var(--red);color:#fff}
+
+/* Progress */
+.progress-track{height:6px;border-radius:3px;background:#F3F4F6;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),#F97316);transition:width .3s}
+
+/* Projects */
+.project-card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid var(--border);margin-bottom:16px}
+.project-name{font-weight:700;font-size:15px;margin-bottom:6px}
+
+/* Transversal */
+.transversal-banner{background:linear-gradient(135deg,#1E1B4B,#312E81);border-radius:16px;padding:20px 24px;color:#fff;margin-bottom:24px}
+.transversal-banner h3{font-size:16px;font-weight:800;margin-bottom:4px}
+.transversal-banner>p{font-size:12px;opacity:.8;margin-bottom:14px}
+.frentes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.frente-card{background:rgba(255,255,255,.1);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,.15)}
+.frente-card h4{font-size:12px;font-weight:700;margin-bottom:4px}
+.frente-card p{font-size:11px;opacity:.85;line-height:1.4}
+
+/* Team */
+.team-section{margin-bottom:16px}
+.team-header{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#fff;border-radius:14px 14px 0 0;border:1px solid var(--border);border-bottom:3px solid var(--red);cursor:pointer}
+.team-header h3{font-size:15px;font-weight:700;flex:1}
+.team-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:16px 18px}
+.team-body.collapsed{display:none}
+.subsection-title{font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F3F4F6}
+
+/* Backlog */
+.backlog-card{background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:14px 16px;margin-bottom:8px}
+.backlog-card h4{font-size:13px;font-weight:700;color:#92400E;margin-bottom:2px}
+.backlog-card p{font-size:11px;color:#A16207}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all .2s}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);transform:translateY(20px);transition:transform .2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-header h3{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:#4B5563;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:var(--rs);border:1px solid #E5E7EB;font-size:13px;outline:none;font-family:inherit;background:#fff}
+.field textarea{min-height:60px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.btn-cancel{padding:10px 20px;border-radius:var(--rs);border:1px solid #E5E7EB;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--t2);font-family:inherit}
+.btn-save{padding:10px 20px;border-radius:var(--rs);border:none;background:var(--red);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
+
+.empty{text-align:center;padding:40px;color:var(--t3);font-size:13px}
+
+/* Config panel */
+.config-panel{padding:16px 24px;background:#FFF7ED;border-bottom:1px solid #FDE68A;display:none}
+.config-panel.open{display:block}
+.config-panel input{padding:8px 12px;border-radius:8px;border:1px solid #E5E7EB;font-size:12px;font-family:inherit;width:100%;max-width:500px;outline:none}
+.config-panel button{padding:8px 16px;border-radius:8px;border:none;background:var(--red);color:#fff;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;margin-left:8px}
+.config-panel label{font-size:12px;font-weight:600;color:#92400E;display:block;margin-bottom:6px}
+
+/* Loading spinner */
+.loading{text-align:center;padding:30px}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid #F3F4F6;border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
+  .summary-grid{grid-template-columns:repeat(2,1fr)}
+  .dash-grid,.frentes-grid{grid-template-columns:1fr}
+  .content{padding:16px}.header{padding:20px 16px 16px}
+  .section-header{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">📊</div>
+    <h2>Ops Dashboard</h2>
+    <p>Central de gestão operacional</p>
+    <input class="login-input" type="password" id="pwInput" placeholder="Digite a senha de acesso" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="loginError">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title"><span style="font-size:24px">📊</span><h1>Ops Dashboard</h1></div>
+      <p>Central de gestão operacional</p>
+      <div class="sync-status" id="syncStatus"></div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="syncCalendar()">🔄 Sincronizar Calendar</button>
+      <button class="header-btn" onclick="toggleConfig()">⚙️ Configurar</button>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+</div>
+<!-- Config panel -->
+<div class="config-panel" id="configPanel">
+  <label>URL do Google Apps Script (cole aqui após publicar)</label>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <input id="apiUrlInput" placeholder="https://script.google.com/macros/s/SEU_ID/exec">
+    <button onclick="saveApiUrl()">Salvar</button>
+  </div>
+  <div style="font-size:11px;color:#92400E;margin-top:6px">Após salvar, clique em "🔄 Sincronizar Calendar" para puxar seus eventos.</div>
+</div>
+<div class="nav" id="navBar">
+  <button class="nav-btn active" onclick="go('dashboard')" data-tab="dashboard">📊 Visão Geral</button>
+  <button class="nav-btn" onclick="go('meetings')" data-tab="meetings" data-private="1">📅 Agenda</button>
+  <button class="nav-btn" onclick="go('tasks')" data-tab="tasks">✅ Demandas</button>
+  <button class="nav-btn" onclick="go('alignments')" data-tab="alignments" data-private="1">🤝 Alinhamentos</button>
+  <button class="nav-btn" onclick="go('teams')" data-tab="teams">👥 Times</button>
+  <button class="nav-btn" onclick="go('projects')" data-tab="projects">🚀 Big Projects</button>
+  <button class="nav-btn" onclick="go('backlog')" data-tab="backlog" data-private="1">💡 Backlog</button>
+</div>
+<div class="content" id="mc"></div>
+</div>
+
+<div class="modal-overlay" id="mo" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3 id="mt">Adicionar</h3><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div id="mb"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-save" onclick="saveItem()">💾 Salvar</button></div>
+  </div>
+</div>
+
+<script>
+// ═══ AUTH ═══
+var role=null;
+function doLogin(){var p=document.getElementById('pwInput').value;if(p==='Lariluca0111*'){role='admin';show()}else if(p==='SOPSCS2026'){role='leader';show()}else{document.getElementById('loginError').style.display='block';document.getElementById('pwInput').value=''}}
+function show(){document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';if(role==='leader'){document.querySelectorAll('[data-private]').forEach(function(e){e.style.display='none'});document.getElementById('configPanel').style.display='none'}loadApiUrl();R();if(API_URL)syncCalendar()}
+function doLogout(){role=null;document.getElementById('loginScreen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('pwInput').value='';document.getElementById('loginError').style.display='none'}
+
+// ═══ CALENDAR SYNC (JSONP) ═══
+var API_URL='';
+function loadApiUrl(){try{API_URL=localStorage.getItem('ops_api_url')||'';document.getElementById('apiUrlInput').value=API_URL}catch(e){}}
+function saveApiUrl(){API_URL=document.getElementById('apiUrlInput').value.trim();try{localStorage.setItem('ops_api_url',API_URL)}catch(e){}document.getElementById('configPanel').classList.remove('open');if(API_URL)syncCalendar()}
+function toggleConfig(){document.getElementById('configPanel').classList.toggle('open')}
+function updateSync(msg){document.getElementById('syncStatus').textContent=msg}
+
+// JSONP callback — chamado automaticamente quando o script carrega
+function calendarCallback(result){
+  if(result&&result.success){
+    // Preservar pautas e done status dos meetings existentes
+    var existingAgendas={};var existingDone={};
+    D.meetings.forEach(function(m){if(m.agenda&&m.agenda.length>0)existingAgendas[m.title+'_'+m.date]=m.agenda;if(m.done)existingDone[m.title+'_'+m.date]=true});
+
+    // Mapear eventos do Calendar
+    var calEvents=[];
+    for(var i=0;i<result.events.length;i++){
+      var e=result.events[i];
+      if(e.time==='all-day')continue; // pular eventos de dia inteiro
+      var key=e.title+'_'+e.date;
+      calEvents.push({
+        id:i+1,
+        title:e.title,
+        date:e.date,
+        time:e.time,
+        end:e.endTime||'',
+        type:e.type||'Outro',
+        who:e.participants||'',
+        done:existingDone[key]||false,
+        agenda:existingAgendas[key]||[],
+        fromCal:true
+      });
+    }
+    D.meetings=calEvents;
+    save();
+    updateSync('✅ '+result.total+' eventos sincronizados · '+new Date().toLocaleTimeString('pt-BR'));
+  }else{
+    updateSync('❌ Erro: '+(result?result.error:'resposta inválida'));
+  }
+  R();
+}
+
+function syncCalendar(){
+  if(!API_URL){toggleConfig();updateSync('⚠️ Configure a URL do Apps Script');return}
+  updateSync('🔄 Sincronizando...');
+
+  // Remove script anterior se existir
+  var old=document.getElementById('jsonpScript');
+  if(old)old.remove();
+
+  // Cria tag script com JSONP
+  var script=document.createElement('script');
+  script.id='jsonpScript';
+  script.src=API_URL+'?callback=calendarCallback&daysBack=7&daysForward=60';
+  script.onerror=function(){
+    updateSync('❌ Erro de conexão. Verifique a URL e tente novamente.');
+    // Tenta carregar cache
+    try{var c=localStorage.getItem('ops_cal_cache');if(c){D.meetings=JSON.parse(c);updateSync('⚠️ Offline — usando cache');R()}}catch(ex){}
+  };
+  document.head.appendChild(script);
+}
+
+// ═══ DATA ═══
+var D={
+  meetings:[
+    {id:1,title:'1:1 com Laís',date:'2026-05-26',time:'10:45',end:'11:30',type:'1:1',who:'Laís (gestora)',done:false,agenda:[{t:'Comunicar venda das férias',d:false},{t:'Solicitar agendamento de 15 dias em outubro',d:false}]},
+    {id:2,title:'Weekly do time',date:'2026-05-26',time:'14:00',end:'14:45',type:'Recorrente',who:'Time Planejamento',done:false,agenda:[]},
+    {id:3,title:'1:1 com Joy',date:'2026-05-26',time:'14:45',end:'15:30',type:'1:1',who:'Joy',done:false,agenda:[]},
+    {id:4,title:'Entrevistas (vaga pleno)',date:'2026-05-26',time:'15:30',end:'17:00',type:'Entrevista',who:'Candidatos',done:false,agenda:[]},
+    {id:5,title:'Planning com Laís + time',date:'2026-05-26',time:'17:30',end:'18:00',type:'Alinhamento',who:'Laís + Time',done:false,agenda:[]},
+    {id:6,title:'1:1 com Mai',date:'2026-05-27',time:'09:15',end:'10:00',type:'1:1',who:'Mai',done:false,agenda:[]},
+    {id:7,title:'1:1 com Duda',date:'2026-05-27',time:'10:15',end:'10:45',type:'1:1',who:'Duda',done:false,agenda:[]},
+    {id:8,title:'1:1 com Guilherme',date:'2026-05-27',time:'15:00',end:'15:30',type:'1:1',who:'Guilherme',done:false,agenda:[]},
+    {id:9,title:'1:1 com Martin',date:'2026-05-27',time:'15:30',end:'16:00',type:'1:1',who:'Martin',done:false,agenda:[]},
+    {id:10,title:'Wall Face Novos Negócios',date:'2026-05-27',time:'16:30',end:'18:00',type:'Fórum',who:'Time NN',done:false,agenda:[]},
+    {id:11,title:'1:1 com Douglas',date:'2026-05-28',time:'11:00',end:'11:30',type:'1:1',who:'Douglas',done:false,agenda:[]},
+    {id:12,title:'Growth Self | Jornada Self',date:'2026-05-28',time:'14:00',end:'15:00',type:'Estratégico',who:'Time Growth',done:false,agenda:[]},
+    {id:13,title:'Weekly de Rentabilidade',date:'2026-05-28',time:'16:00',end:'17:00',type:'Recorrente',who:'Time Rentabilidade',done:false,agenda:[]},
+    {id:14,title:'Feedback com Laís',date:'2026-05-28',time:'17:00',end:'17:45',type:'1:1',who:'Laís (gestora)',done:false,agenda:[]},
+    {id:15,title:'1:1 com Santos',date:'2026-05-29',time:'09:30',end:'10:00',type:'1:1',who:'Santos',done:false,agenda:[]},
+    {id:16,title:'Tombamento Salesforce',date:'2026-05-29',time:'10:30',end:'11:00',type:'Operacional',who:'Time CRM',done:false,agenda:[]},
+    {id:17,title:'Retropol',date:'2026-05-29',time:'11:15',end:'12:00',type:'Recorrente',who:'Time',done:false,agenda:[]},
+    {id:18,title:'Agenda de Growth',date:'2026-05-29',time:'14:00',end:'15:00',type:'Estratégico',who:'Time Growth',done:false,agenda:[]},
+    {id:19,title:'1:1 com Tati',date:'2026-05-29',time:'16:00',end:'16:30',type:'1:1',who:'Tati',done:false,agenda:[]},
+    {id:20,title:'1:1 com Érica',date:'2026-05-29',time:'16:30',end:'17:00',type:'1:1',who:'Érica',done:false,agenda:[]},
+    {id:21,title:'Check-in com time de Planejamento',date:'2026-05-30',time:'09:30',end:'11:00',type:'Recorrente',who:'Time Planejamento',done:false,agenda:[]},
+    {id:22,title:'Desdobramento de metas',date:'2026-05-30',time:'11:00',end:'12:00',type:'Estratégico',who:'Time',done:false,agenda:[]},
+    {id:23,title:'Cumbica (discussão de livro)',date:'2026-05-30',time:'17:00',end:'17:45',type:'Cultura',who:'Time',done:false,agenda:[]}
+  ],
+  tasks:[
+    {id:1,title:'Fechar a vaga (pleno)',deadline:'2026-05-27',priority:'alta',status:'em andamento',owner:'Lari',category:'RH',done:false},
+    {id:2,title:'Construir material da Wiki',deadline:'2026-05-26',priority:'alta',status:'pendente',owner:'Lari',category:'Documentação',done:false},
+    {id:3,title:'Validar com Joyce se Mayra solta material CRM',deadline:'2026-05-26',priority:'alta',status:'pendente',owner:'Lari',category:'CRM',done:false},
+    {id:4,title:'Acompanhar demandas paradas com Eficiência Comercial e TEC',deadline:'2026-05-30',priority:'média',status:'pendente',owner:'Lari',category:'Adoção',done:false}
+  ],
+  alignments:[
+    {id:1,person:'Joyce',topic:'Material CRM — validar se Mayra solta',status:'pendente',urgency:'alta',dueDate:'2026-05-26',context:'Alinhamento sobre material de CRM',done:false},
+    {id:2,person:'Eficiência Comercial',topic:'Demandas paradas com TEC',status:'pendente',urgency:'média',dueDate:'2026-05-30',context:'Acompanhamento de pendências do time de Adoção',done:false}
+  ],
+  projects:[
+    {id:1,team:'adocao',name:'Agente de Adoção',status:'em andamento',progress:15,desc:'Agente inteligente para executivos de adoção com carteira completa, dados Databricks, metas, insights, projeções e integração Slack/Webhook.',pendencias:'Acompanhamento de demandas paradas com Eficiência Comercial e TEC'},
+    {id:2,team:'farmer_rel',name:'Recuperação Eu Mais',status:'não iniciado',progress:0,desc:'Atuação estratégica em parceiros "Eu Mais" com queda de pedidos para recuperação de performance.',pendencias:''},
+    {id:3,team:'retencao',name:'Bot da Virgínia',status:'em andamento',progress:30,desc:'Acompanhamento da evolução do bot focado em priorização de clientes 400+ junto ao time de Produto.',pendencias:''},
+    {id:4,team:'churn',name:'CRM App via código',status:'em andamento',progress:10,desc:'Construção de uma aplicação CRM própria para otimização operacional do time.',pendencias:''}
+  ],
+  crmCS:[
+    {id:1,title:'Frente 1 — Disparos CRM',desc:'Definir solução de disparos CRM junto ao time de Eficiência Comercial.',owner:'Lari + Eficiência Comercial',status:'em andamento'},
+    {id:2,title:'Frente 2 — Segmentações',desc:'Acompanhar com Joy o mapeamento das segmentações.',owner:'Joy',status:'em andamento'},
+    {id:3,title:'Frente 3 — Dados Datacloud',desc:'Priorizar inclusão de dados de nota via Datacloud.',owner:'Lari',status:'pendente'}
+  ],
+  backlog:[
+    {id:1,title:'Agent de Contestação',desc:'Agente para otimizar o processo de contestação e reduzir esforço operacional.',team:'transversal'}
+  ]
+};
+
+var TEAMS=[
+  {id:'adocao',name:'Adoção',icon:'🚀'},
+  {id:'farmer',name:'Farmer',icon:'🌱'},
+  {id:'farmer_rel',name:'Farmer Relacional',icon:'🤝'},
+  {id:'churn',name:'Churn',icon:'🔄'},
+  {id:'retencao',name:'Retenção',icon:'🛡️'}
+];
+
+var tab='dashboard',filter='todos',editSec=null,editItem=null;
+
+// Persistence
+function save(){try{localStorage.setItem('ops_v5',JSON.stringify(D));localStorage.setItem('ops_cal_cache',JSON.stringify(D.meetings))}catch(e){}}
+function load(){try{var s=localStorage.getItem('ops_v5');if(s)D=JSON.parse(s)}catch(e){}}
+load();
+
+// ═══ HELPERS ═══
+var WD={0:'Dom',1:'Seg',2:'Ter',3:'Qua',4:'Qui',5:'Sex',6:'Sáb'};
+function fd(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]}
+function fdf(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+function du(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/(864e5))}
+function dow(d){return WD[new Date(d+'T12:00:00').getDay()]}
+function B(l,c){return'<span class="badge b-'+c+'">'+l+'</span>'}
+function SB(s){var m={pendente:'yellow','em andamento':'blue','concluído':'green',confirmado:'green','não iniciado':'gray'};return B(s,m[s]||'gray')}
+function PB(p){var m={alta:'red',média:'yellow',baixa:'green'};return B(p,m[p]||'gray')}
+function TB(t){var m={'1:1':'blue',Recorrente:'purple',Alinhamento:'yellow',Estratégico:'red',Fórum:'purple',Operacional:'yellow',Cultura:'green',Entrevista:'gray'};return B(t,m[t]||'gray')}
+function E(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function nid(arr){return Math.max(0,...arr.map(function(i){return i.id}))+1}
+
+// ═══ NAV ═══
+function go(t){tab=t;filter='todos';document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.toggle('active',b.dataset.tab===t)});R()}
+
+// ═══ TOGGLE DONE ═══
+function toggleMeeting(id){var m=D.meetings.find(function(x){return x.id===id});if(m){m.done=!m.done;save();R()}}
+function toggleTask(id){var t=D.tasks.find(function(x){return x.id===id});if(t){t.done=!t.done;if(t.done)t.status='concluído';else t.status='pendente';save();R()}}
+function toggleAlign(id){var a=D.alignments.find(function(x){return x.id===id});if(a){a.done=!a.done;if(a.done)a.status='concluído';else a.status='pendente';save();R()}}
+
+// ═══ AGENDA/PAUTAS ═══
+function togglePauta(mid,idx){var m=D.meetings.find(function(x){return x.id===mid});if(m&&m.agenda[idx]!==undefined){m.agenda[idx].d=!m.agenda[idx].d;save();R()}}
+function addPauta(mid){var inp=document.getElementById('pa-'+mid);if(!inp||!inp.value.trim())return;var m=D.meetings.find(function(x){return x.id===mid});if(m){m.agenda.push({t:inp.value.trim(),d:false});save();R()}}
+function rmPauta(mid,idx){var m=D.meetings.find(function(x){return x.id===mid});if(m){m.agenda.splice(idx,1);save();R()}}
+function paKey(e,mid){if(e.key==='Enter')addPauta(mid)}
+
+function renderPautas(m){
+  var h='<div class="agenda-section"><div class="agenda-title">📋 Pautas</div>';
+  if(!m.agenda||m.agenda.length===0)h+='<div style="font-size:11px;color:var(--t3);padding:4px 0">Nenhuma pauta</div>';
+  else m.agenda.forEach(function(a,i){
+    h+='<div class="agenda-item"><input type="checkbox" '+(a.d?'checked':'')+' onchange="togglePauta('+m.id+','+i+')"><span class="agenda-text '+(a.d?'done':'')+'">'+E(a.t)+'</span><button class="icon-btn" style="padding:2px;font-size:11px" onclick="rmPauta('+m.id+','+i+')">✕</button></div>';
+  });
+  h+='<div class="add-agenda"><input id="pa-'+m.id+'" placeholder="Adicionar pauta..." onkeydown="paKey(event,'+m.id+')"><button onclick="addPauta('+m.id+')">+</button></div></div>';
+  return h;
+}
+
+// ═══ RENDER ═══
+function R(){
+  var c=document.getElementById('mc');
+  switch(tab){
+    case'dashboard':c.innerHTML=rDash();break;
+    case'meetings':c.innerHTML=rMeet();break;
+    case'tasks':c.innerHTML=rTasks();break;
+    case'alignments':c.innerHTML=rAlign();break;
+    case'teams':c.innerHTML=rTeams();break;
+    case'projects':c.innerHTML=rProj();break;
+    case'backlog':c.innerHTML=rBack();break;
+  }
+}
+
+function rDash(){
+  var today=new Date().toISOString().split('T')[0];
+  var tm=D.meetings.filter(function(m){return m.date===today&&!m.done}).length;
+  var ut=D.tasks.filter(function(t){return t.priority==='alta'&&!t.done}).length;
+  var ap=D.projects.filter(function(p){return p.status==='em andamento'}).length;
+  var pa=D.alignments.filter(function(a){return!a.done}).length;
+  var cf=D.crmCS.filter(function(f){return f.status!=='concluído'}).length;
+
+  var h='<div class="summary-grid">'+
+    '<div class="summary-card"><div class="summary-icon" style="background:#EA1D2C12">📅</div><div class="summary-value">'+tm+'</div><div class="summary-label">Reuniões hoje</div></div>'+
+    '<div class="summary-card"><div class="summary-icon" style="background:#F59E0B12">⚡</div><div class="summary-value">'+ut+'</div><div class="summary-label">Tarefas urgentes</div></div>'+
+    '<div class="summary-card"><div class="summary-icon" style="background:#3B82F612">🤝</div><div class="summary-value">'+pa+'</div><div class="summary-label">Alinhamentos</div></div>'+
+    '<div class="summary-card"><div class="summary-icon" style="background:#10B98112">🚀</div><div class="summary-value">'+ap+'</div><div class="summary-label">Projetos ativos</div></div>'+
+    '<div class="summary-card"><div class="summary-icon" style="background:#8B5CF612">📋</div><div class="summary-value">'+cf+'</div><div class="summary-label">Frentes CRM CS</div></div>'+
+    '</div><div class="dash-grid">';
+
+  // Agenda hoje (admin)
+  if(role==='admin'){
+    h+='<div class="dash-card"><div class="dash-card-header"><h3>📅 Reuniões de hoje</h3><button class="dash-link" onclick="go(\'meetings\')">Ver todas →</button></div>';
+    var todayM=D.meetings.filter(function(m){return m.date===today});
+    if(todayM.length===0)h+='<div style="padding:16px 0;text-align:center;color:var(--t3);font-size:12px">Nenhuma reunião hoje</div>';
+    else todayM.forEach(function(m){
+      h+='<div class="list-item"><input type="checkbox" '+(m.done?'checked':'')+' onchange="toggleMeeting('+m.id+')"><div class="item-content"><div class="item-title '+(m.done?'done':'')+'">'+E(m.title)+'</div><div class="item-sub">'+m.time+' — '+m.end+' · '+E(m.who)+'</div></div><div class="item-badges">'+TB(m.type)+'</div></div>';
+    });
+    h+='</div>';
+  }
+
+  // Demandas
+  h+='<div class="dash-card"><div class="dash-card-header"><h3>🔥 Demandas</h3><button class="dash-link" onclick="go(\'tasks\')">Ver todas →</button></div>';
+  D.tasks.forEach(function(t){
+    h+='<div class="list-item"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTask('+t.id+')"><div class="item-content"><div class="item-title '+(t.done?'done':'')+'">'+E(t.title)+'</div><div class="item-sub">'+E(t.owner)+' · até '+fdf(t.deadline)+'</div></div><div class="item-badges">'+PB(t.priority)+'</div></div>';
+  });
+  h+='</div>';
+
+  // Alinhamentos (admin)
+  if(role==='admin'){
+    h+='<div class="dash-card"><div class="dash-card-header"><h3>🤝 Alinhamentos</h3><button class="dash-link" onclick="go(\'alignments\')">Ver todos →</button></div>';
+    D.alignments.forEach(function(a){
+      h+='<div class="list-item"><input type="checkbox" '+(a.done?'checked':'')+' onchange="toggleAlign('+a.id+')"><div class="item-content"><div class="item-title '+(a.done?'done':'')+'">'+E(a.person)+': '+E(a.topic)+'</div><div class="item-sub">até '+fdf(a.dueDate)+'</div></div><div class="item-badges">'+SB(a.status)+'</div></div>';
+    });
+    h+='</div>';
+  }
+
+  // Projects
+  h+='<div class="dash-card"><div class="dash-card-header"><h3>🚀 Big Projects</h3><button class="dash-link" onclick="go(\'projects\')">Ver todos →</button></div>';
+  D.projects.forEach(function(p){
+    var team=TEAMS.find(function(t){return t.id===p.team});
+    h+='<div style="padding:8px 0;border-bottom:1px solid #F9F7F4"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span class="item-title">'+E(p.name)+'</span><span style="font-size:11px;font-weight:700;color:var(--red)">'+p.progress+'%</span></div><div class="progress-track"><div class="progress-fill" style="width:'+p.progress+'%"></div></div></div>';
+  });
+  h+='</div>';
+
+  // CRM CS
+  h+='<div class="dash-card full-width"><div class="dash-card-header"><h3>🔗 CRM CS — Projeto Transversal</h3></div>';
+  D.crmCS.forEach(function(f){
+    h+='<div class="list-item"><div class="item-content"><div class="item-title">'+E(f.title)+'</div><div class="item-sub">'+E(f.desc)+'</div></div><div class="item-badges">'+SB(f.status)+'</div></div>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+function rMeet(){
+  var sorted=D.meetings.slice().sort(function(a,b){return(a.date+a.time).localeCompare(b.date+b.time)});
+  var types=['todos','1:1','Recorrente','Estratégico'];
+  if(filter!=='todos')sorted=sorted.filter(function(m){return m.type===filter});
+  var today=new Date().toISOString().split('T')[0];
+
+  var h='<div class="section-header"><div class="filters">'+types.map(function(s){return'<button class="filter-btn '+(filter===s?'active':'')+'" onclick="filter=\''+s+'\';R()">'+s+'</button>'}).join('')+'</div></div>';
+
+  var byDay={};sorted.forEach(function(m){if(!byDay[m.date])byDay[m.date]=[];byDay[m.date].push(m)});
+
+  Object.keys(byDay).sort().forEach(function(date){
+    var isT=date===today;
+    h+='<div class="day-sep">'+dow(date)+'-feira <span class="day-badge '+(isT?'day-today':'')+'">'+fd(date)+(isT?' · HOJE':'')+'</span></div>';
+    byDay[date].forEach(function(m){
+      h+='<div class="entry-card"><div class="entry-top"><div style="display:flex;align-items:center;gap:10px;flex:1">'
+        +'<input type="checkbox" '+(m.done?'checked':'')+' onchange="toggleMeeting('+m.id+')" style="width:18px;height:18px;accent-color:var(--red)">'
+        +'<div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="item-title '+(m.done?'done':'')+'">'+E(m.title)+'</span>'+TB(m.type)+'</div>'
+        +'<div class="entry-meta"><span>🕐 '+m.time+' — '+m.end+'</span><span>👥 '+E(m.who)+'</span></div></div></div>'
+        +'<div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'meetings\','+m.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'meetings\','+m.id+')">🗑️</button></div></div>'
+        +renderPautas(m)+'</div>';
+    });
+  });
+  return h;
+}
+
+function rTasks(){
+  var sts=['todos','pendente','em andamento','concluído'];
+  var sorted=D.tasks.slice().sort(function(a,b){var p={alta:0,média:1,baixa:2};return(p[a.priority]||9)-(p[b.priority]||9)});
+  if(filter!=='todos')sorted=sorted.filter(function(t){return t.status===filter});
+
+  var h='<div class="section-header"><div class="filters">'+sts.map(function(s){return'<button class="filter-btn '+(filter===s?'active':'')+'" onclick="filter=\''+s+'\';R()">'+s.charAt(0).toUpperCase()+s.slice(1)+'</button>'}).join('')+'</div>'
+    +(role==='admin'?'<button class="add-btn" onclick="openAdd(\'tasks\')">➕ Nova demanda</button>':'')+'</div>';
+
+  if(sorted.length===0)return h+'<div class="empty">Nenhuma demanda encontrada</div>';
+
+  sorted.forEach(function(t){
+    var days=du(t.deadline),ov=days!==null&&days<0&&!t.done;
+    h+='<div class="entry-card '+(ov?'overdue':'')+' '+(t.priority==='alta'&&!t.done?'urgent':'')+'"><div class="entry-top"><div style="display:flex;align-items:center;gap:10px;flex:1">'
+      +'<input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTask('+t.id+')" style="width:18px;height:18px;accent-color:var(--red)">'
+      +'<div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="item-title '+(t.done?'done':'')+'">'+E(t.title)+'</span>'+PB(t.priority)+' '+SB(t.status)+' '+B(t.category,'purple')+'</div>'
+      +'<div class="entry-meta"><span>👤 '+E(t.owner)+'</span><span>📅 '+fdf(t.deadline)+'</span>'
+      +(ov?'<span style="color:var(--red);font-weight:600">⚠️ atrasada</span>':'')
+      +(days!==null&&days>=0&&days<=2?'<span style="color:var(--yellow);font-weight:600">⏰ '+days+'d</span>':'')
+      +'</div></div></div>'
+      +(role==='admin'?'<div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'tasks\','+t.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'tasks\','+t.id+')">🗑️</button></div>':'')
+      +'</div></div>';
+  });
+  return h;
+}
+
+function rAlign(){
+  var sts=['todos','pendente','agendado','concluído'];
+  var sorted=D.alignments.slice().sort(function(a,b){var u={alta:0,média:1,baixa:2};return(u[a.urgency]||9)-(u[b.urgency]||9)});
+  if(filter!=='todos')sorted=sorted.filter(function(a){return a.status===filter});
+
+  var h='<div class="section-header"><div class="filters">'+sts.map(function(s){return'<button class="filter-btn '+(filter===s?'active':'')+'" onclick="filter=\''+s+'\';R()">'+s.charAt(0).toUpperCase()+s.slice(1)+'</button>'}).join('')+'</div>'
+    +'<button class="add-btn" onclick="openAdd(\'alignments\')">➕ Novo alinhamento</button></div>';
+
+  if(sorted.length===0)return h+'<div class="empty">Nenhum alinhamento encontrado</div>';
+
+  sorted.forEach(function(a){
+    var ud=a.urgency==='alta'?'🔴':a.urgency==='média'?'🟡':'🟢';
+    h+='<div class="entry-card"><div class="entry-top"><div style="display:flex;align-items:center;gap:10px;flex:1">'
+      +'<input type="checkbox" '+(a.done?'checked':'')+' onchange="toggleAlign('+a.id+')" style="width:18px;height:18px;accent-color:var(--red)">'
+      +'<div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span>'+ud+'</span><span class="item-title '+(a.done?'done':'')+'">'+E(a.person)+'</span>'+SB(a.status)+'</div>'
+      +'<div style="font-size:13px;color:#374151;margin-top:2px">'+E(a.topic)+'</div>'
+      +'<div class="entry-meta"><span>📅 até '+fdf(a.dueDate)+'</span></div>'
+      +(a.context?'<div style="font-size:11px;color:var(--t3);margin-top:4px">'+E(a.context)+'</div>':'')
+      +'</div></div>'
+      +'<div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'alignments\','+a.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'alignments\','+a.id+')">🗑️</button></div>'
+      +'</div></div>';
+  });
+  return h;
+}
+
+function rTeams(){
+  var h='<div style="margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">Gestão por Times</h3></div>';
+  TEAMS.forEach(function(team){
+    var tp=D.projects.filter(function(p){return p.team===team.id});
+    h+='<div class="team-section"><div class="team-header" onclick="this.nextElementSibling.classList.toggle(\'collapsed\')">'
+      +'<span style="font-size:20px">'+team.icon+'</span><h3>'+team.name+'</h3>'
+      +'<span style="font-size:11px;color:var(--t3)">'+tp.length+' projeto(s)</span><span style="font-size:14px;color:var(--t3)">▼</span></div>'
+      +'<div class="team-body">';
+    if(tp.length>0){
+      h+='<div class="subsection-title">🚀 Projetos estratégicos</div>';
+      tp.forEach(function(p){
+        h+='<div style="background:#FAFAF9;border-radius:10px;padding:12px 14px;border:1px solid #F0EDE8;margin-bottom:8px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px">'+E(p.name)+'</span>'
+          +(role==='admin'?'<div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'projects\','+p.id+')">✏️</button></div>':'')
+          +'</div>'
+          +'<div style="font-size:11px;color:var(--t2);margin-top:4px">'+E(p.desc)+'</div>'
+          +'<div style="display:flex;gap:6px;margin-top:6px;align-items:center">'+SB(p.status)+'<span style="font-size:10px;color:var(--t3)">'+p.progress+'%</span></div>'
+          +'<div class="progress-track" style="margin-top:6px"><div class="progress-fill" style="width:'+p.progress+'%"></div></div>'
+          +(p.pendencias?'<div style="margin-top:6px;padding:6px 10px;background:#FEF2F2;border-radius:6px;font-size:11px;color:#991B1B">⚠️ '+E(p.pendencias)+'</div>':'')
+          +'</div>';
+      });
+    } else h+='<div style="padding:12px;font-size:12px;color:var(--t3)">Nenhum projeto mapeado</div>';
+    h+='</div></div>';
+  });
+  return h;
+}
+
+function rProj(){
+  // CRM CS
+  var h='<div class="transversal-banner"><h3>🔗 Projeto Transversal — CRM CS</h3><p>Iniciativa cross-funcional que impacta todos os times de pós-venda</p><div class="frentes-grid">';
+  D.crmCS.forEach(function(f){
+    h+='<div class="frente-card"><h4>'+E(f.title)+'</h4><p>'+E(f.desc)+'</p><div style="font-size:10px;opacity:.6;margin-top:6px">👤 '+E(f.owner)+' · '+SB(f.status)+'</div></div>';
+  });
+  h+='</div></div>';
+
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">Big Projects por Time</h3>'
+    +(role==='admin'?'<button class="add-btn" onclick="openAdd(\'projects\')">➕ Novo projeto</button>':'')+'</div>';
+
+  D.projects.forEach(function(p){
+    var team=TEAMS.find(function(t){return t.id===p.team});
+    h+='<div class="project-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+      +'<div><span class="project-name">'+(team?team.icon+' ':'')+E(p.name)+'</span><br>'+B(team?team.name:'','purple')+' '+SB(p.status)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;color:var(--red)">'+p.progress+'%</span>'
+      +(role==='admin'?'<button class="icon-btn" onclick="openEdit(\'projects\','+p.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'projects\','+p.id+')">🗑️</button>':'')
+      +'</div></div>'
+      +'<div class="progress-track" style="margin-bottom:10px"><div class="progress-fill" style="width:'+p.progress+'%"></div></div>'
+      +'<div style="font-size:12px;color:var(--t2);line-height:1.6">'+E(p.desc)+'</div>'
+      +(p.pendencias?'<div style="margin-top:8px;padding:8px 12px;background:#FEF2F2;border-radius:8px;font-size:11px;color:#991B1B">⚠️ '+E(p.pendencias)+'</div>':'')
+      +'</div>';
+  });
+  return h;
+}
+
+function rBack(){
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><h3 style="font-size:16px;font-weight:700">💡 Backlog de Ideias</h3><p style="font-size:12px;color:var(--t2);margin-top:4px">Ideias e iniciativas para explorar no futuro</p></div>'
+    +'<button class="add-btn" onclick="openAdd(\'backlog\')">➕ Nova ideia</button></div>';
+  D.backlog.forEach(function(b){
+    h+='<div class="backlog-card"><div style="display:flex;justify-content:space-between"><h4>💡 '+E(b.title)+'</h4><div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'backlog\','+b.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'backlog\','+b.id+')">🗑️</button></div></div><p>'+E(b.desc)+'</p></div>';
+  });
+  if(D.backlog.length===0)h+='<div class="empty">Nenhuma ideia no backlog</div>';
+  return h;
+}
+
+// ═══ MODAL / CRUD ═══
+function openAdd(sec){editItem=null;editSec=sec;var t={meetings:'Nova Reunião',tasks:'Nova Demanda',alignments:'Novo Alinhamento',projects:'Novo Projeto',backlog:'Nova Ideia'};document.getElementById('mt').textContent=t[sec]||'Adicionar';document.getElementById('mb').innerHTML=formFields(sec,{});document.getElementById('mo').classList.add('open')}
+function openEdit(sec,id){var item=D[sec].find(function(i){return i.id===id});if(!item)return;editItem=item;editSec=sec;var t={meetings:'Editar Reunião',tasks:'Editar Demanda',alignments:'Editar Alinhamento',projects:'Editar Projeto',backlog:'Editar Ideia'};document.getElementById('mt').textContent=t[sec]||'Editar';document.getElementById('mb').innerHTML=formFields(sec,item);document.getElementById('mo').classList.add('open')}
+function closeModal(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('mo').classList.remove('open');editItem=null;editSec=null}
+
+function V(k,obj){return(obj&&obj[k])||''}
+function formFields(sec,it){
+  switch(sec){
+    case'meetings':return'<div class="field"><label>Título</label><input id="f_title" value="'+E(V('title',it))+'"></div>'
+      +'<div class="field-row"><div class="field"><label>Data</label><input type="date" id="f_date" value="'+V('date',it)+'"></div><div class="field"><label>Início</label><input type="time" id="f_time" value="'+V('time',it)+'"></div></div>'
+      +'<div class="field-row"><div class="field"><label>Fim</label><input type="time" id="f_end" value="'+V('end',it)+'"></div><div class="field"><label>Tipo</label><select id="f_type">'+['1:1','Recorrente','Alinhamento','Estratégico','Fórum','Operacional','Entrevista','Cultura'].map(function(o){return'<option '+(V('type',it)===o?'selected':'')+'>'+o+'</option>'}).join('')+'</select></div></div>'
+      +'<div class="field"><label>Participantes</label><input id="f_who" value="'+E(V('who',it))+'"></div>';
+    case'tasks':return'<div class="field"><label>Título</label><input id="f_title" value="'+E(V('title',it))+'"></div>'
+      +'<div class="field-row"><div class="field"><label>Deadline</label><input type="date" id="f_deadline" value="'+V('deadline',it)+'"></div><div class="field"><label>Prioridade</label><select id="f_priority">'+['alta','média','baixa'].map(function(o){return'<option '+(V('priority',it)===o?'selected':'')+'>'+o+'</option>'}).join('')+'</select></div></div>'
+      +'<div class="field-row"><div class="field"><label>Owner</label><input id="f_owner" value="'+E(V('owner',it))+'"></div><div class="field"><label>Categoria</label><input id="f_category" value="'+E(V('category',it))+'"></div></div>'
+      +'<div class="field"><label>Status</label><select id="f_status">'+['pendente','em andamento','concluído'].map(function(o){return'<option '+(V('status',it)===o?'selected':'')+'>'+o+'</option>'}).join('')+'</select></div>';
+    case'alignments':return'<div class="field"><label>Pessoa</label><input id="f_person" value="'+E(V('person',it))+'"></div>'
+      +'<div class="field"><label>Tópico</label><input id="f_topic" value="'+E(V('topic',it))+'"></div>'
+      +'<div class="field-row"><div class="field"><label>Urgência</label><select id="f_urgency">'+['alta','média','baixa'].map(function(o){return'<option '+(V('urgency',it)===o?'selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div class="field"><label>Prazo</label><input type="date" id="f_dueDate" value="'+V('dueDate',it)+'"></div></div>'
+      +'<div class="field"><label>Status</label><select id="f_status">'+['pendente','agendado','concluído'].map(function(o){return'<option '+(V('status',it)===o?'selected':'')+'>'+o+'</option>'}).join('')+'</select></div>'
+      +'<div class="field"><label>Contexto</label><textarea id="f_context">'+E(V('context',it))+'</textarea></div>';
+    case'projects':return'<div class="field"><label>Nome</label><input id="f_name" value="'+E(V('name',it))+'"></div>'
+      +'<div class="field"><label>Time</label><select id="f_team">'+TEAMS.map(function(t){return'<option value="'+t.id+'" '+(V('team',it)===t.id?'selected':'')+'>'+t.icon+' '+t.name+'</option>'}).join('')+'</select></div>'
+      +'<div class="field-row"><div class="field"><label>Status</label><select id="f_status">'+['não iniciado','em andamento','concluído'].map(function(o){return'<option '+(V('status',it)===o?'selected':'')+'>'+o+'</option>'}).join('')+'</select></div><div class="field"><label>Progresso (%)</label><input type="number" min="0" max="100" id="f_progress" value="'+(V('progress',it)||0)+'"></div></div>'
+      +'<div class="field"><label>Descrição</label><textarea id="f_desc">'+E(V('desc',it))+'</textarea></div>'
+      +'<div class="field"><label>Pendências</label><textarea id="f_pendencias">'+E(V('pendencias',it))+'</textarea></div>';
+    case'backlog':return'<div class="field"><label>Título</label><input id="f_title" value="'+E(V('title',it))+'"></div>'
+      +'<div class="field"><label>Descrição</label><textarea id="f_desc">'+E(V('desc',it))+'</textarea></div>'
+      +'<div class="field"><label>Time</label><input id="f_team" value="'+E(V('team',it))+'" placeholder="transversal, adoção, etc"></div>';
+  }
+}
+
+function saveItem(){
+  var sec=editSec,g=function(id){var el=document.getElementById(id);return el?el.value:''};
+  var item={};
+  switch(sec){
+    case'meetings':item={title:g('f_title'),date:g('f_date'),time:g('f_time'),end:g('f_end'),type:g('f_type'),who:g('f_who')};if(!editItem){item.done=false;item.agenda=[]}break;
+    case'tasks':item={title:g('f_title'),deadline:g('f_deadline'),priority:g('f_priority'),owner:g('f_owner'),category:g('f_category'),status:g('f_status')};if(!editItem)item.done=false;break;
+    case'alignments':item={person:g('f_person'),topic:g('f_topic'),urgency:g('f_urgency'),dueDate:g('f_dueDate'),status:g('f_status'),context:g('f_context')};if(!editItem)item.done=false;break;
+    case'projects':item={name:g('f_name'),team:g('f_team'),status:g('f_status'),progress:parseInt(g('f_progress'))||0,desc:g('f_desc'),pendencias:g('f_pendencias')};break;
+    case'backlog':item={title:g('f_title'),desc:g('f_desc'),team:g('f_team')};break;
+  }
+  if(editItem){var idx=D[sec].findIndex(function(i){return i.id===editItem.id});if(idx>=0)D[sec][idx]=Object.assign({},D[sec][idx],item)}
+  else{item.id=nid(D[sec]);D[sec].push(item)}
+  save();closeModal();R();
+}
+
+function delItem(sec,id){if(!confirm('Excluir?'))return;D[sec]=D[sec].filter(function(i){return i.id!==id});save();R()}
+
+R();
+</script>
+</body>
+</html>
