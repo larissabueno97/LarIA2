@@ -195,9 +195,7 @@ h1,h2,h3{font-family:'Raleway',sans-serif}
   <button class="nav-btn" onclick="go('meetings')" data-tab="meetings" data-private="1">📅 Agenda</button>
   <button class="nav-btn" onclick="go('tasks')" data-tab="tasks">✅ Demandas</button>
   <button class="nav-btn" onclick="go('alignments')" data-tab="alignments" data-private="1">🤝 Alinhamentos</button>
-  <button class="nav-btn" onclick="go('teams')" data-tab="teams">👥 Times</button>
   <button class="nav-btn" onclick="go('projects')" data-tab="projects">🚀 Big Projects</button>
-  <button class="nav-btn" onclick="go('backlog')" data-tab="backlog" data-private="1">💡 Backlog</button>
 </div>
 <div class="content" id="mc"></div>
 </div>
@@ -461,9 +459,7 @@ function R(){
     case'meetings':c.innerHTML=rMeet();break;
     case'tasks':c.innerHTML=rTasks();break;
     case'alignments':c.innerHTML=rAlign();break;
-    case'teams':c.innerHTML=rTeams();break;
     case'projects':c.innerHTML=rProj();break;
-    case'backlog':c.innerHTML=rBack();break;
   }
 }
 
@@ -492,6 +488,7 @@ function rDash(){
   // Reuniões (admin, com pautas, esconde concluídas)
   if(role==='admin'){
     h+='<div class="dash-card full-width"><div class="dash-card-header"><h3>📅 Reuniões</h3><button class="dash-link" onclick="go(\'meetings\')">Ver agenda completa →</button></div>';
+    h+='<div style="max-height:420px;overflow-y:auto;padding-right:4px">';
     if(visibleMeetings.length===0)h+='<div style="padding:16px 0;text-align:center;color:var(--t3);font-size:12px">Nenhuma reunião pendente no período</div>';
     else{
       // Group by day
@@ -508,7 +505,8 @@ function rDash(){
         });
       });
     }
-    h+='</div>';
+    h+='</div>'; // fecha scroll div
+    h+='</div>'; // fecha dash-card
   }
 
   // Demandas (admin — leader vê embaixo dos projects)
@@ -637,8 +635,10 @@ function rAlign(){
   return h;
 }
 
-function rTeams(){
-  var h='<div style="margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">Gestão por Times</h3></div>';
+function rProj(){
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font-size:18px;font-weight:800">🚀 Big Projects</h3></div>';
+
+  // ═══ SEÇÃO 1: PROJETOS POR TIME (com abertura/colapso) ═══
   TEAMS.forEach(function(team){
     var tp=D.projects.filter(function(p){return p.team===team.id});
     h+='<div class="team-section"><div class="team-header" onclick="this.nextElementSibling.classList.toggle(\'collapsed\')">'
@@ -646,43 +646,37 @@ function rTeams(){
       +'<span style="font-size:11px;color:var(--t3)">'+tp.length+' projeto(s)</span><span style="font-size:14px;color:var(--t3)">▼</span></div>'
       +'<div class="team-body">';
     if(tp.length>0){
-      h+='<div class="subsection-title">🚀 Projetos estratégicos</div>';
       tp.forEach(function(p){
         h+='<div style="background:#FAFAF9;border-radius:10px;padding:12px 14px;border:1px solid #F0EDE8;margin-bottom:8px">'
           +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px">'+E(p.name)+'</span>'
-          +(role==='admin'?'<button class="icon-btn" onclick="openEdit(\'projects\','+p.id+')">✏️</button>':'')+'</div>'
+          +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;font-weight:700;color:var(--red)">'+p.progress+'%</span>'
+          +(role==='admin'?'<button class="icon-btn" onclick="openEdit(\'projects\','+p.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'projects\','+p.id+')">🗑️</button>':'')
+          +'</div></div>'
           +'<div style="font-size:11px;color:var(--t2);margin-top:4px">'+E(p.desc)+'</div>'
-          +'<div style="display:flex;gap:6px;margin-top:6px;align-items:center">'+SB(p.status)+'<span style="font-size:10px;color:var(--t3)">'+p.progress+'%</span></div>'
+          +'<div style="display:flex;gap:6px;margin-top:6px;align-items:center">'+SB(p.status)+'</div>'
           +'<div class="progress-track" style="margin-top:6px"><div class="progress-fill" style="width:'+p.progress+'%"></div></div>'
           +(p.pendencias?'<div style="margin-top:6px;padding:6px 10px;background:#FEF2F2;border-radius:6px;font-size:11px;color:#991B1B">⚠️ '+E(p.pendencias)+'</div>':'')
           +'</div>';
       });
     }else h+='<div style="padding:12px;font-size:12px;color:var(--t3)">Nenhum projeto mapeado</div>';
+    // Botão de adicionar projeto dentro do time (admin)
+    if(role==='admin') h+='<div style="padding:8px 0"><button class="add-btn" style="font-size:11px;padding:6px 12px" onclick="openAddForTeam(\''+team.id+'\')">➕ Novo projeto em '+team.name+'</button></div>';
     h+='</div></div>';
   });
-  return h;
-}
 
-function rProj(){
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">🚀 Big Projects</h3>'
-    +(role==='admin'?'<button class="add-btn" onclick="openAdd(\'projects\')">➕ Novo projeto</button>':'')+'</div>';
-
-  // Projetos por time
-  D.projects.forEach(function(p){
-    var team=TEAMS.find(function(t){return t.id===p.team});
-    h+='<div class="project-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-      +'<div><span class="project-name">'+(team?team.icon+' ':'')+E(p.name)+'</span><br>'+B(team?team.name:'','purple')+' '+SB(p.status)+'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700;color:var(--red)">'+p.progress+'%</span>'
-      +(role==='admin'?'<button class="icon-btn" onclick="openEdit(\'projects\','+p.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'projects\','+p.id+')">🗑️</button>':'')
-      +'</div></div>'
-      +'<div class="progress-track" style="margin-bottom:10px"><div class="progress-fill" style="width:'+p.progress+'%"></div></div>'
-      +'<div style="font-size:12px;color:var(--t2);line-height:1.6">'+E(p.desc)+'</div>'
-      +(p.pendencias?'<div style="margin-top:8px;padding:8px 12px;background:#FEF2F2;border-radius:8px;font-size:11px;color:#991B1B">⚠️ '+E(p.pendencias)+'</div>':'')
-      +'</div>';
+  // ═══ SEÇÃO 2: BACKLOG DE IDEIAS (sem time) ═══
+  h+='<div style="margin-top:24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:16px;font-weight:700">💡 Backlog de Ideias</h3>'
+    +(role==='admin'?'<button class="add-btn" onclick="openAdd(\'backlog\')">➕ Nova ideia</button>':'')+'</div>';
+  if(D.backlog.length===0) h+='<div style="padding:12px;font-size:12px;color:var(--t3);text-align:center">Nenhuma ideia no backlog</div>';
+  else D.backlog.forEach(function(b){
+    h+='<div class="backlog-card"><div style="display:flex;justify-content:space-between"><h4>💡 '+E(b.title)+'</h4>'
+      +(role==='admin'?'<div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'backlog\','+b.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'backlog\','+b.id+')">🗑️</button></div>':'')
+      +'</div><p>'+E(b.desc)+'</p></div>';
   });
 
-  // CRM CS dentro de Big Projects
-  h+='<div class="transversal-banner"><h3>🔗 Projeto Transversal — CRM CS</h3><p>Iniciativa cross-funcional que impacta todos os times</p><div class="frentes-grid">';
+  // ═══ SEÇÃO 3: PROJETOS TRANSVERSAIS (CRM CS) ═══
+  h+='<div style="margin-top:24px"></div>';
+  h+='<div class="transversal-banner"><h3>🔗 Projetos Transversais</h3><p>Iniciativas cross-funcionais que impactam todos os times</p><div class="frentes-grid">';
   D.crmCS.forEach(function(f){
     h+='<div class="frente-card"><h4>'+E(f.title)+'</h4><p>'+E(f.desc)+'</p><div style="font-size:10px;opacity:.6;margin-top:6px">👤 '+E(f.owner)+' · '+SB(f.status)+'</div></div>';
   });
@@ -691,14 +685,12 @@ function rProj(){
   return h;
 }
 
-function rBack(){
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><h3 style="font-size:16px;font-weight:700">💡 Backlog de Ideias</h3></div>'
-    +'<button class="add-btn" onclick="openAdd(\'backlog\')">➕ Nova ideia</button></div>';
-  D.backlog.forEach(function(b){
-    h+='<div class="backlog-card"><div style="display:flex;justify-content:space-between"><h4>💡 '+E(b.title)+'</h4><div class="entry-actions"><button class="icon-btn" onclick="openEdit(\'backlog\','+b.id+')">✏️</button><button class="icon-btn" onclick="delItem(\'backlog\','+b.id+')">🗑️</button></div></div><p>'+E(b.desc)+'</p></div>';
-  });
-  if(D.backlog.length===0)h+='<div class="empty">Nenhuma ideia no backlog</div>';
-  return h;
+// Abre modal de novo projeto com time pré-selecionado
+function openAddForTeam(teamId){
+  editItem=null;editSec='projects';
+  document.getElementById('mt').textContent='Novo Projeto';
+  document.getElementById('mb').innerHTML=formFields('projects',{team:teamId});
+  document.getElementById('mo').classList.add('open');
 }
 
 // ═══ MODAL / CRUD ═══
